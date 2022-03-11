@@ -69,10 +69,24 @@ class JITBuffer
     @pos += 1
   end
 
+  def write bytes
+    raise(ReadOnlyException, "Buffer is read only!") unless @writeable
+    raise OutOfBoundsException if pos + bytes.bytesize >= @size
+    @memory[pos, bytes.length] = bytes
+    @pos += bytes.bytesize
+  end
+
   def getc
     raise(OutOfBoundsException, "You've gone too far!") if pos >= @size
     x = @memory[pos]
     @pos += 1
+    x
+  end
+
+  def read len
+    raise(OutOfBoundsException, "You've gone too far!") if pos + len >= @size
+    x = @memory[pos, pos + len]
+    @pos += len
     x
   end
 

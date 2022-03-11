@@ -53,13 +53,63 @@ class JITBufferTest < Minitest::Test
 
     jit.writeable!
 
-    insns.bytes.each do |byte|
-      jit.putc byte
-    end
+    jit.write insns
 
     jit.executable!
     func = jit.to_function([], Fiddle::TYPE_INT)
     assert_equal 42, func.call
+  end
+
+  def test_invalid_write
+    jit = JITBuffer.new 4096
+    assert_raises do
+      jit.write "foo"
+    end
+  end
+
+  def test_oob_write
+    jit = JITBuffer.new 4096
+    jit.seek 4095
+
+    jit.writeable!
+    assert_raises(JITBuffer::OutOfBoundsException) do
+      jit.write "foooooo"
+    end
+  end
+
+  def test_write
+    jit = JITBuffer.new 4096
+
+    bytes = "foo".b
+    jit.writeable!
+    pos = jit.pos
+    jit.write bytes
+    assert_equal pos + bytes.bytesize, jit.pos
+
+    jit.seek pos
+    assert_equal bytes, jit.read(bytes.bytesize)
+  end
+
+  def test_read
+    jit = JITBuffer.new 4096
+
+    bytes = "foo".b
+    jit.writeable!
+    pos = jit.pos
+    jit.write bytes
+    jit.seek pos
+    assert_equal pos, jit.pos
+    assert_equal bytes, jit.read(bytes.bytesize)
+    assert_equal pos + bytes.bytesize, jit.pos
+  end
+
+  def test_read_oob
+    jit = JITBuffer.new 4096
+
+    jit.seek 4095
+    assert_raises do
+      jit.read 3
+    end
   end
 
   # ARM instructions
