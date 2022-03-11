@@ -4,12 +4,8 @@
 #include <mach/mach_init.h>
 #include <pthread.h>
 
-#if HAVE_MACH_TASK_SELF
-static VALUE
-rb_mach_task_self(VALUE mod)
-{
-    return LONG2NUM((uintptr_t)mach_task_self());
-}
+#if HAVE_SYS_ICACHE_INVALIDATE
+#include <libkern/OSCacheControl.h>
 #endif
 
 #if HAVE_PTHREAD_JIT_WRITE_PROTECT_NP
@@ -22,6 +18,18 @@ rb_pthread_jit_write_protect_np(VALUE mod, VALUE v)
     else {
         pthread_jit_write_protect_np(0);
     }
+
+    return Qnil;
+}
+#endif
+
+#if HAVE_SYS_ICACHE_INVALIDATE
+static VALUE
+rb_sys_icache_invalidate(VALUE mod, VALUE addr, VALUE len)
+{
+    sys_icache_invalidate((void *)(NUM2ULONG(addr)), NUM2INT(len));
+
+    return Qnil;
 }
 #endif
 
@@ -45,7 +53,7 @@ void Init_jit_buffer() {
     rb_define_module_function(rb_mMMap, "pthread_jit_write_protect_np", rb_pthread_jit_write_protect_np, 1);
 #endif
 
-#if HAVE_MACH_TASK_SELF
-    rb_define_module_function(rb_mMMap, "mach_task_self", rb_mach_task_self, 0);
+#if HAVE_SYS_ICACHE_INVALIDATE
+    rb_define_module_function(rb_mMMap, "sys_icache_invalidate", rb_sys_icache_invalidate, 2);
 #endif
 }

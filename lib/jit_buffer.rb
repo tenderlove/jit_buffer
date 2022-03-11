@@ -85,12 +85,13 @@ class JITBuffer
   end
 
   def executable!
-    MMAP.pthread_jit_write_protect_np(true)
+    MMAP.pthread_jit_write_protect_np true
+    MMAP.sys_icache_invalidate @memory.to_i, @size
     @writeable = false
   end
 
   def writeable!
-    MMAP.pthread_jit_write_protect_np(false)
+    MMAP.pthread_jit_write_protect_np false
     @writeable = true
   end
 
