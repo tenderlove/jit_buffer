@@ -112,6 +112,11 @@ class JITBufferTest < Minitest::Test
     end
   end
 
+  def test_to_i
+    jit = JITBuffer.new 4096
+    assert jit.to_i
+  end
+
   # ARM instructions
   def movz reg, imm
     insn = 0b0_10_100101_00_0000000000000000_00000

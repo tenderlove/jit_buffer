@@ -114,4 +114,9 @@ class JITBuffer
   def to_function params, ret
     Fiddle::Function.new @memory.to_i, params, ret
   end
+
+  # Get the address of the executable memory
+  def to_i
+    @memory.to_i
+  end
 end
