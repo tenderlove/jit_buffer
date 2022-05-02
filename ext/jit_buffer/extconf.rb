@@ -2,6 +2,7 @@ require 'mkmf'
 
 raise unless have_header "sys/mman.h"
 
+have_header 'mach/vm_prot.h'
 have_const 'MAP_JIT', 'sys/mman.h'
 
 have_func 'pthread_jit_write_protect_np'

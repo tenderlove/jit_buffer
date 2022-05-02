@@ -42,17 +42,36 @@ class JITBuffer
 
     make_function "mprotect", [TYPE_VOIDP, TYPE_SIZE_T, TYPE_INT], TYPE_INT
 
+    MAP_JIT = 0 unless const_defined?(:MAP_JIT)
+
     def self.mmap_buffer size
       ptr = mmap 0, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANON | MAP_JIT, -1, 0
       ptr.size = size
       ptr
     end
+
+    if respond_to?(:pthread_jit_write_protect_np)
+      def self.set_writeable ptr
+        MMAP.pthread_jit_write_protect_np false
+      end
+
+      def self.set_executable ptr
+        MMAP.pthread_jit_write_protect_np true
+        MMAP.sys_icache_invalidate ptr, ptr.size
+      end
+    else
+      def self.set_writeable ptr
+        MMAP.mprotect ptr, ptr.size, PROT_READ | PROT_WRITE
+      end
+
+      def self.set_executable ptr
+        MMAP.mprotect ptr, ptr.size, PROT_READ | PROT_EXEC
+      end
+    end
   end
 
   def self.new size
-    x = super(MMAP.mmap_buffer(size), size)
-    MMAP.pthread_jit_write_protect_np(true)
-    x
+    super(MMAP.mmap_buffer(size), size)
   end
 
   attr_reader :pos
@@ -62,6 +81,7 @@ class JITBuffer
     @memory = memory
     @size   = size
     @pos    = 0
+    executable!
   end
 
   def putc byte
@@ -101,13 +121,12 @@ class JITBuffer
   end
 
   def executable!
-    MMAP.pthread_jit_write_protect_np true
-    MMAP.sys_icache_invalidate @memory.to_i, @size
+    MMAP.set_executable @memory.to_i
     @writeable = false
   end
 
   def writeable!
-    MMAP.pthread_jit_write_protect_np false
+    MMAP.set_writeable @memory.to_i
     @writeable = true
   end
 

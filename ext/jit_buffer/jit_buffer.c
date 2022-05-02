@@ -1,8 +1,11 @@
 #include <ruby.h>
 #include <sys/mman.h>
+#include <pthread.h>
+
+#if HAVE_MACH_VM_PROT_H
 #include <mach/vm_prot.h>
 #include <mach/mach_init.h>
-#include <pthread.h>
+#endif
 
 #if HAVE_SYS_ICACHE_INVALIDATE
 #include <libkern/OSCacheControl.h>
@@ -40,9 +43,11 @@ void Init_jit_buffer() {
     rb_define_const(rb_mMMap, "PROT_READ", INT2NUM(PROT_READ));
     rb_define_const(rb_mMMap, "PROT_WRITE", INT2NUM(PROT_WRITE));
     rb_define_const(rb_mMMap, "PROT_EXEC", INT2NUM(PROT_EXEC));
+#if HAVE_MACH_VM_PROT_H
     rb_define_const(rb_mMMap, "VM_PROT_COPY", INT2NUM(VM_PROT_COPY));
     rb_define_const(rb_mMMap, "VM_PROT_READ", INT2NUM(VM_PROT_READ));
     rb_define_const(rb_mMMap, "VM_PROT_EXECUTE", INT2NUM(VM_PROT_EXECUTE));
+#endif
     rb_define_const(rb_mMMap, "MAP_PRIVATE", INT2NUM(MAP_PRIVATE));
     rb_define_const(rb_mMMap, "MAP_ANON", INT2NUM(MAP_ANON));
 #if HAVE_CONST_MAP_JIT
