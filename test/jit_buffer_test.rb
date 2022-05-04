@@ -46,18 +46,21 @@ class JITBufferTest < Minitest::Test
 
   def test_execute
     jit = JITBuffer.new 4096
-    insns = [
-      movz(0, 42),
-      ret
-    ].pack("L<L<")
+
+    bytes = [0x48, 0xc7, 0xc0, 0x2b, 0x00, 0x00, 0x00, # x86_64 mov rax, 0x2b
+             0xc3,                                     # x86_64 ret
+             0xeb, 0xf6,                               # x86 jmp
+             0x80, 0xd2,                               # ARM movz X11, 0x7b7
+             0x60, 0x05, 0x80, 0xd2,                   # ARM movz X0, #0x2b
+             0xc0, 0x03, 0x5f, 0xd6]                   # ARM ret
 
     jit.writeable!
 
-    jit.write insns
+    jit.write bytes.pack("C*")
 
     jit.executable!
-    func = jit.to_function([], Fiddle::TYPE_INT)
-    assert_equal 42, func.call
+    func = Fiddle::Function.new(jit.to_i + 8, [], Fiddle::TYPE_INT)
+    assert_equal 43, func.call
   end
 
   def test_invalid_write
@@ -115,19 +118,5 @@ class JITBufferTest < Minitest::Test
   def test_to_i
     jit = JITBuffer.new 4096
     assert jit.to_i
-  end
-
-  # ARM instructions
-  def movz reg, imm
-    insn = 0b0_10_100101_00_0000000000000000_00000
-    insn |= (1 << 31)  # 64 bit
-    insn |= (imm << 5) # immediate
-    insn |= reg        # reg
-  end
-
-  def ret xn = 30
-    insn = 0b1101011_0_0_10_11111_0000_0_0_00000_00000
-    insn |= (xn << 5)
-    insn
   end
 end
