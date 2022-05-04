@@ -1,4 +1,3 @@
-require "jit_buffer.so"
 require "fiddle"
 
 class Fiddle::Function
@@ -23,6 +22,20 @@ class JITBuffer
   module MMAP
     include Fiddle
 
+    PROT_READ   = 0x01
+    PROT_WRITE  = 0x02
+    PROT_EXEC   = 0x04
+
+    MAP_PRIVATE = 0x02
+
+    if RUBY_PLATFORM =~ /darwin/
+      MAP_ANON    = 0x1000
+      MAP_JIT     = 0x800
+    else
+      MAP_ANON    = 0x20
+      MAP_JIT     = 0x0
+    end
+
     def self.make_function name, args, ret
       ptr = Handle::DEFAULT[name]
       func = Function.new ptr, args, ret, name: name
@@ -42,7 +55,11 @@ class JITBuffer
 
     make_function "mprotect", [TYPE_VOIDP, TYPE_SIZE_T, TYPE_INT], TYPE_INT
 
-    MAP_JIT = 0 unless const_defined?(:MAP_JIT)
+    begin
+      make_function "pthread_jit_write_protect_np", [TYPE_INT], TYPE_VOID
+      make_function "sys_icache_invalidate", [TYPE_VOIDP, -TYPE_INT], TYPE_VOID
+    rescue Fiddle::DLError
+    end
 
     def self.mmap_buffer size
       ptr = mmap 0, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANON | MAP_JIT, -1, 0
@@ -51,15 +68,17 @@ class JITBuffer
     end
 
     if respond_to?(:pthread_jit_write_protect_np)
+      # MacOS
       def self.set_writeable ptr
-        MMAP.pthread_jit_write_protect_np false
+        MMAP.pthread_jit_write_protect_np 0
       end
 
       def self.set_executable ptr
-        MMAP.pthread_jit_write_protect_np true
+        MMAP.pthread_jit_write_protect_np 1
         MMAP.sys_icache_invalidate ptr, ptr.size
       end
     else
+      # Linux
       def self.set_writeable ptr
         MMAP.mprotect ptr, ptr.size, PROT_READ | PROT_WRITE
       end

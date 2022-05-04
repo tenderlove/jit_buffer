@@ -18,10 +18,8 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
 
   spec.require_paths = ["lib"]
-  spec.extensions = ["ext/jit_buffer/extconf.rb"]
 
   spec.add_development_dependency "rake", '~> 13.0'
-  spec.add_development_dependency "rake-compiler", '~> 1.1'
   spec.add_development_dependency "minitest", '~> 5.15'
   spec.add_dependency "fiddle", '~> 1.1'
 end
