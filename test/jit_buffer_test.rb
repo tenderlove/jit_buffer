@@ -2,6 +2,49 @@ require "helper"
 require "jit_buffer"
 
 class JITBufferTest < Minitest::Test
+  def test_fill_buffer_with_putc
+    jit = JITBuffer.new 4096
+    str = [0xCC] * 4096
+    jit.writeable!
+    str.each { |c| jit.putc c }
+    assert_equal 4096, jit.pos
+    jit.seek 0
+
+    bytes = []
+    4096.times { bytes << (jit.getc & 0xFF) }
+    assert_equal 4096, jit.pos
+    assert_equal str, bytes
+  end
+
+  def test_fill_buffer_read_with_getc
+    jit = JITBuffer.new 4096
+    str = ([0xCC] * 4096).pack("C*")
+    jit.writeable!
+    jit.write(str)
+    assert_equal 4096, jit.pos
+    jit.seek 0
+
+    bytes = []
+    4096.times { bytes << jit.getc }
+    assert_equal 4096, jit.pos
+    assert_equal str, bytes.pack("C*")
+  end
+
+  def test_fill_buffer
+    jit = JITBuffer.new 4096
+    str = ([0xCC] * 4096).pack("C*")
+    jit.writeable!
+    jit.write(str)
+    assert_equal 4096, jit.pos
+    jit.seek 0
+    assert_equal str, jit.read(4096)
+  end
+
+  def test_size
+    jit = JITBuffer.new 4096
+    assert_equal 4096, jit.size
+  end
+
   def test_make_writeable
     jit = JITBuffer.new 4096
     jit.writeable!
@@ -60,7 +103,7 @@ class JITBufferTest < Minitest::Test
 
     jit.executable!
     func = Fiddle::Function.new(jit.to_i + 8, [], Fiddle::TYPE_INT)
-    assert_equal 43, func.call
+    assert_equal 0x2b, func.call
   end
 
   def test_invalid_write

@@ -93,7 +93,7 @@ class JITBuffer
     super(MMAP.mmap_buffer(size), size)
   end
 
-  attr_reader :pos
+  attr_reader :pos, :size
 
   def initialize memory, size
     @writeable = false
@@ -112,7 +112,7 @@ class JITBuffer
 
   def write bytes
     raise(ReadOnlyException, "Buffer is read only!") unless @writeable
-    raise OutOfBoundsException if pos + bytes.bytesize >= @size
+    raise OutOfBoundsException if pos + bytes.bytesize > @size
     @memory[pos, bytes.length] = bytes
     @pos += bytes.bytesize
   end
@@ -125,7 +125,7 @@ class JITBuffer
   end
 
   def read len
-    raise(OutOfBoundsException, "You've gone too far!") if pos + len >= @size
+    raise(OutOfBoundsException, "You've gone too far!") if pos + len > @size
     x = @memory[pos, pos + len]
     @pos += len
     x
