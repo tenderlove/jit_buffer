@@ -8,7 +8,7 @@ class Fiddle::Function
 end unless Fiddle::Function.method_defined?(:to_proc)
 
 class JITBuffer
-  VERSION = '1.0.2'
+  VERSION = '1.0.3'
 
   class Exception < StandardError
   end
