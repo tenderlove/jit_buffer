@@ -26,6 +26,7 @@ class JITBuffer
     PROT_WRITE  = 0x02
     PROT_EXEC   = 0x04
 
+    MAP_SHARED  = 0x01
     MAP_PRIVATE = 0x02
 
     if RUBY_PLATFORM =~ /darwin/
@@ -101,6 +102,10 @@ class JITBuffer
     @size   = size
     @pos    = 0
     executable!
+  end
+
+  def [] a, b
+    @memory[a, b]
   end
 
   def putc byte
