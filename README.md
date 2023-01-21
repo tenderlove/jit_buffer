@@ -2,8 +2,6 @@
 
 This is a general purpose JIT Buffer object for building JITs in Ruby.
 
-Currently only works on macOS though I'll make it work on Linux too.
-
 ## Usage
 
 Create a JIT Buffer, then specify the size.  The JIT Buffer can only be
