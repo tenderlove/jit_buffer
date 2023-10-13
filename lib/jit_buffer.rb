@@ -70,22 +70,22 @@ class JITBuffer
 
     if respond_to?(:pthread_jit_write_protect_np)
       # MacOS
-      def self.set_writeable ptr
+      def self.set_writeable ptr, _
         MMAP.pthread_jit_write_protect_np 0
       end
 
-      def self.set_executable ptr
+      def self.set_executable ptr, size
         MMAP.pthread_jit_write_protect_np 1
-        MMAP.sys_icache_invalidate ptr, ptr.size
+        MMAP.sys_icache_invalidate ptr, size
       end
     else
       # Linux
-      def self.set_writeable ptr
-        MMAP.mprotect ptr, ptr.size, PROT_READ | PROT_WRITE
+      def self.set_writeable ptr, size
+        MMAP.mprotect ptr, size, PROT_READ | PROT_WRITE
       end
 
-      def self.set_executable ptr
-        MMAP.mprotect ptr, ptr.size, PROT_READ | PROT_EXEC
+      def self.set_executable ptr, size
+        MMAP.mprotect ptr, size, PROT_READ | PROT_EXEC
       end
     end
   end
@@ -145,12 +145,12 @@ class JITBuffer
   end
 
   def executable!
-    MMAP.set_executable @memory.to_i
+    MMAP.set_executable @memory.to_i, @size
     @writeable = false
   end
 
   def writeable!
-    MMAP.set_writeable @memory.to_i
+    MMAP.set_writeable @memory.to_i, @size
     @writeable = true
   end
 
